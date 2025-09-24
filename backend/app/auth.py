@@ -5,11 +5,13 @@ from typing import Optional
 from passlib.context import CryptContext
 from jose import JWTError, jwt
 from fastapi import Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordBearer
+from fastapi.security import OAuth2PasswordBearer, HTTPBearer
+from fastapi.security.http import HTTPAuthorizationCredentials # 导入这个
 from sqlalchemy.orm import Session
 from . import models, schemas
 from .database import get_db
 from dotenv import load_dotenv
+import uuid # 导入 uuid
 
 load_dotenv()
 
@@ -27,7 +29,8 @@ SECRET_KEY = os.getenv("SECRET_KEY", "your-super-secret-key") # 从 .env 获取�
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30 # 访问令牌过期时间
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+# 使用 HTTPBearer 替换 OAuth2PasswordBearer，以便在 Swagger UI 中显示简单的 Bearer Token 输入框
+oauth2_scheme = HTTPBearer()
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     to_encode = data.copy()
@@ -45,7 +48,8 @@ def get_user_by_username(db: Session, username: str):
 def get_user_by_email(db: Session, email: str):
     return db.query(models.User).filter(models.User.email == email).first()
 
-async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
+async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(oauth2_scheme), db: Session = Depends(get_db)):
+    token = credentials.credentials # 从 credentials 中提取 token 字符串
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
@@ -54,7 +58,7 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = De
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         username: str = payload.get("username")
-        user_id: str = payload.get("user_id") # 获取 user_id
+        user_id: str = payload.get("user_id")
         if username is None or user_id is None:
             raise credentials_exception
         token_data = schemas.TokenData(username=username, user_id=uuid.UUID(user_id))
@@ -66,5 +70,4 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = De
     return user
 
 async def get_current_active_user(current_user: models.User = Depends(get_current_user)):
-    # 可以在这里添加用户是否激活的检查
     return current_user
