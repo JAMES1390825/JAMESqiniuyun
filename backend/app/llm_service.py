@@ -1,6 +1,6 @@
 # app/llm_service.py
 import os
-from openai import OpenAI
+from openai import AsyncOpenAI # 修改为 AsyncOpenAI
 from dotenv import load_dotenv
 from typing import List, Dict, Optional
 
@@ -15,8 +15,8 @@ if not QINIU_OPENAI_API_KEY:
 if not QINIU_OPENAI_BASE_URL:
     raise ValueError("QINIU_OPENAI_BASE_URL environment variable not set.")
 
-# 初始化 OpenAI 客户端，指向七牛云的兼容接口
-client = OpenAI(
+# 初始化 AsyncOpenAI 客户端，指向七牛云的兼容接口
+client = AsyncOpenAI(
     api_key=QINIU_OPENAI_API_KEY,
     base_url=QINIU_OPENAI_BASE_URL,
 )
