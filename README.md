@@ -1,3 +1,7 @@
+demo来不及了，关键是语音聊天websocket出现问题，项目运行失败了，之前文字聊天是可以的
+
+
+
 # FastAPI 后端服务
 
 这是一个使用 FastAPI 框架构建的后端服务，集成了 PostgreSQL 数据库。
